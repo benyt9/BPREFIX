@@ -1,0 +1,11 @@
+# Beispiel-Eintrag in der prefixes.yml
+prefixes:
+  blau_premium:
+    display_name: "&9&lBlau"
+    color_code: "&9"
+    permission: "bprefix.prefixcolor.blau"
+    item:
+      material: "PAPER"
+      custom_model_data: 105
+      # Oder bei Köpfen:
+      # skull_owner: "UUID_ODER_NAME"

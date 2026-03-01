@@ -1,0 +1,21 @@
+name: BPREFIX
+version: '1.0.0'
+main: b.bplugins.prefixplugin.Main
+api-version: '1.21'
+authors: [ EinfachBen ]
+description: Ein modernes Prefix-System mit MiniMessage und Legacy-Support.
+website: https://modrinth.com/plugin/bprefix # Kannst du später anpassen
+softdepend: [PlaceholderAPI, LuckPerms]
+
+commands:
+  prefix:
+    description: Hauptbefehl für das BPREFIX System.
+    permission: bprefix.use
+
+permissions:
+  bprefix.admin:
+    description: Erlaubt den Reload des Plugins
+    default: op
+  bprefix.command.createprefix:
+    description: Erlaubt das Erstellen neuer Prefixe
+    default: op

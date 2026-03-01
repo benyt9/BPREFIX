@@ -1,0 +1,10 @@
+# BPREFIX - Nachrichten Konfiguration
+prefix: "&8[&bBPREFIX&8] &7"
+
+no-permission: "%prefix%&cDazu hast du keine Rechte!"
+prefix-created: "%prefix%&aDer Prefix &f%name% &awurde erstellt."
+prefix-reset: "%prefix%&eDein Prefix wurde zurückgesetzt."
+prefix-selected: "%prefix%&aFarbe auf %name% &ageändert!"
+no-item-in-hand: "%prefix%&cDu musst ein Item in der Hand halten!"
+only-players: "%prefix%&cDieser Befehl ist nur für Spieler!"
+prefix-reload-success: "%prefix%<gradient:#a8ff78:#78ffd6>Die Konfigurationen wurden erfolgreich neu geladen!</gradient>"
