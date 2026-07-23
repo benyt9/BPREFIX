@@ -1,21 +1,25 @@
 mappings:
-  prefix: "<colors.message:prefix> "
-
+  prefix: "<dark_gray>[<gradient:aqua:blue>BPREFIX<dark_gray>] <gray>"
   colors:
     message:
-      prefix: "<gray>[<gold>BPrefix</gold><gray>]</gray> "
-      success: "<green>"
+      success: "<gradient:#a8ff78:#78ffd6>"
       error: "<red>"
-      info: "<yellow>"
+      info: "<gradient:#55cdfc:#f7a8b8:#ffffff>"
 
 messages:
-  menu:
-    title: "<dark_gray>Prefix Auswahl"
-    reset-button: "<colors.message:error>Prefix zurücksetzen"
-    item-lore: "<colors.message:info>Klicke zum Auswählen"
+  usage: "<colors.message:info>Verwende: /prefix"
+  no-permission: "<colors.message:error>Dazu hast du keine Rechte!"
+  prefix-created: "<colors.message:success>Der Prefix <white>%name% <colors.message:success>wurde erstellt."
+  prefix-reset: "<colors.message:info>Dein Prefix wurde zurückgesetzt."
+  prefix-selected: "<colors.message:success>Dein Prefix wurde auf <white>%name% <colors.message:success>geändert."
+  no-item-in-hand: "<colors.message:info>Du musst ein Item in der Hand halten!"
+  only-players: "<colors.message:error>Dieser Befehl ist nur für Spieler!"
+  prefix-reload-success: "<colors.message:success>Die Konfigurationen wurden erfolgreich neu geladen!"
 
-  no-item-in-hand: "<colors.message:error>Du musst ein Item in der Hand halten!"
-  prefix-created: "<colors.message:success>Prefix %name% wurde erfolgreich erstellt!"
-  prefix-reload-success: "<colors.message:success>Konfiguration erfolgreich neu geladen!"
-  prefix-reset: "<colors.message:success>Dein Prefix wurde zurückgesetzt."
-  prefix-selected: "<colors.message:success>Du hast den Prefix %name% ausgewählt!"
+  # GUI Mappings
+  menu:
+    title: "<colors.message:info>Prefix Auswahl"
+    reset-button: "<red>✘ Prefix entfernen"
+    item-lore: "<dark_gray>» <gray>Klicke, um diesen Prefix auszuwählen"
+    previous-page: "<green>◄ Vorherige Seite"
+    next-page: "<green>Nächste Seite ►"

@@ -1,16 +1,18 @@
 plugins {
-    java
+    id("java-library")
     id("xyz.jpenilla.run-paper") version "2.3.1"
+    `maven-publish`
 }
 
 group = "b.bplugins.prefixplugin"
-version = "1.0.2"
+version = "1.1.1"
 
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
     maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
     maven("https://repo.lucko.me/")
+    maven("https://repo.opencollab.dev/main/")
 }
 
 dependencies {
@@ -18,6 +20,7 @@ dependencies {
     compileOnly("me.clip:placeholderapi:2.11.7")
     compileOnly("net.luckperms:api:5.4")
     compileOnly("org.jetbrains:annotations:24.0.1")
+    compileOnly("org.geysermc.floodgate:api:2.2.3-SNAPSHOT")
 }
 
 tasks {
@@ -51,5 +54,13 @@ tasks.processResources {
     filteringCharset = "UTF-8"
     filesMatching("paper-plugin.yml") {
         expand(props)
+    }
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("mavenJava") {
+            from(components["java"])
+        }
     }
 }

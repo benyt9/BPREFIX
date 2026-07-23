@@ -1,10 +1,12 @@
 package b.bplugins.prefixplugin;
 
+import b.bplugins.prefixplugin.api.BPrefixAPI;
 import b.bplugins.prefixplugin.utils.MessageUtils;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,6 +28,8 @@ public class Main extends JavaPlugin {
         instance = this;
 
         if (!getDataFolder().exists()) getDataFolder().mkdirs();
+
+        new BPrefixAPI(this);
 
         saveDefaultConfig();
         String lang = getConfig().getString("language", "de");
@@ -91,5 +95,17 @@ public class Main extends JavaPlugin {
         for (String uuidString : config.getConfigurationSection("users").getKeys(false)) {
             playerColors.put(UUID.fromString(uuidString), config.getString("users." + uuidString));
         }
+    }
+    public static UUID getPlayerUuid(Player player) {
+        try {
+            if (org.bukkit.Bukkit.getPluginManager().isPluginEnabled("floodgate")) {
+                org.geysermc.floodgate.api.player.FloodgatePlayer fPlayer =
+                        org.geysermc.floodgate.api.FloodgateApi.getInstance().getPlayer(player.getUniqueId());
+                if (fPlayer != null) {
+                    return fPlayer.getJavaUniqueId();
+                }
+            }
+        } catch (Exception ignored) {}
+        return player.getUniqueId();
     }
 }

@@ -25,6 +25,16 @@ public class PrefixCommand {
                 .executes(ctx -> {
                     CommandSender sender = ctx.getSource().getSender();
                     if (sender instanceof Player player) {
+                        // Prüfen ob Bedrock (Geyser / Floodgate) aktiv ist
+                        try {
+                            if (org.bukkit.Bukkit.getPluginManager().isPluginEnabled("floodgate")
+                                    && org.geysermc.floodgate.api.FloodgateApi.getInstance().isFloodgatePlayer(player.getUniqueId())) {
+                                new PrefixBedrockForm(plugin).open(player);
+                                return Command.SINGLE_SUCCESS;
+                            }
+                        } catch (Exception ignored) {}
+
+                        // Ansonsten das normale Java-Inventar öffnen
                         new PrefixMenu(plugin).open(player);
                     } else {
                         sender.sendMessage("§cNur für Spieler!");
