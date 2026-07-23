@@ -1,22 +1,24 @@
 package b.bplugins.prefixplugin;
 
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
+import b.bplugins.prefixplugin.utils.MessageUtils;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Main extends JavaPlugin {
 
-    public static HashMap<UUID, String> playerColors = new HashMap<>();
-    private static MessageManager messageManager;
+    // Fix: ConcurrentHashMap statt HashMap. Das Plugin deklariert folia-supported: true
+    // in der paper-plugin.yml, d.h. mehrere Region-Threads können gleichzeitig auf diese
+    // Map zugreifen. Eine normale HashMap ist dabei nicht thread-safe (ConcurrentModificationException /
+    // Datenverlust möglich).
+    public static ConcurrentHashMap<UUID, String> playerColors = new ConcurrentHashMap<>();
     private static Main instance;
 
     @Override
@@ -25,7 +27,9 @@ public class Main extends JavaPlugin {
 
         if (!getDataFolder().exists()) getDataFolder().mkdirs();
 
-        messageManager = new MessageManager(this);
+        saveDefaultConfig();
+        String lang = getConfig().getString("language", "de");
+        MessageUtils.load(lang);
 
         File prefixesFile = new File(getDataFolder(), "prefixes.yml");
         if (!prefixesFile.exists()) {
@@ -34,13 +38,27 @@ public class Main extends JavaPlugin {
 
         loadPlayerData();
 
-        if (getCommand("prefix") != null) {
-            getCommand("prefix").setExecutor(new PrefixCommand(this));
-        }
+        // Paper-Native Befehlsregistrierung über den LifecycleManager
+        this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
+            event.registrar().register(
+                    PrefixCommand.createNode(this),
+                    "Hauptbefehl für das BPREFIX System.",
+                    List.of("bp")
+            );
+        });
+
         getServer().getPluginManager().registerEvents(new MenuListener(this), this);
 
+        // PlaceholderAPI absolut sicher einbinden, ohne Classloader-Crash
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
-            new PrefixPlaceholder(this).register();
+            try {
+                if (org.bukkit.Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+                    new PrefixPlaceholder(this).register();
+                    getLogger().info("PlaceholderAPI Support erfolgreich aktiviert!");
+                }
+            } catch (NoClassDefFoundError e) {
+                getLogger().warning("PlaceholderAPI Klassen konnten nicht geladen werden.");
+            }
         }
 
         getLogger().info("BPREFIX (Paper-Native) wurde erfolgreich aktiviert!");
@@ -53,41 +71,6 @@ public class Main extends JavaPlugin {
 
     public static Main getInstance() {
         return instance;
-    }
-
-    public static MessageManager getMessages() {
-        return messageManager;
-    }
-
-    public void send(Player player, String path, String... replacements) {
-        player.sendMessage(messageManager.getComponent(path, replacements));
-    }
-
-    @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        if (command.getName().equalsIgnoreCase("prefix")) {
-            // Check ob überhaupt Argumente da sind, um Errors zu vermeiden
-            if (args.length >= 1 && args[0].equalsIgnoreCase("reload")) {
-                if (!sender.hasPermission("bprefix.admin")) {
-                    if (sender instanceof Player player) {
-                        send(player, "no-permission");
-                    } else {
-                        sender.sendMessage("§cDazu hast du keine Rechte!");
-                    }
-                    return true;
-                }
-
-                messageManager.reloadMessages();
-
-                if (sender instanceof Player player) {
-                    send(player, "prefix-reload-success");
-                } else {
-                    sender.sendMessage("§a[BPREFIX] Konfigurationen neu geladen!");
-                }
-                return true;
-            }
-        }
-        return false;
     }
 
     private void savePlayerData() {

@@ -1,0 +1,27 @@
+name: BPREFIX
+version: '1.0.2'
+main: b.bplugins.prefixplugin.Main
+api-version: '1.21'
+authors: [ EinfachBen ]
+description: Ein modernes Prefix-System mit MiniMessage und Legacy-Support.
+website: https://modrinth.com/plugin/bprefix
+
+# Wichtig für Folia-Kompatibilität (teilt dem Server mit, dass das Plugin regionsbasiert/thread-safe arbeitet)
+folia-supported: true
+
+permissions:
+  bprefix.admin:
+    description: Erlaubt den Reload des Plugins
+    default: op
+  bprefix.command.createprefix:
+    description: Erlaubt das Erstellen neuer Prefixe
+    default: op
+
+dependencies:
+  server:
+    PlaceholderAPI:
+      load: BEFORE
+      required: true
+    LuckPerms:
+      load: BEFORE
+      required: true

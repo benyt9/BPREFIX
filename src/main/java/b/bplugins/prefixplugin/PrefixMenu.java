@@ -1,5 +1,9 @@
 package b.bplugins.prefixplugin;
 
+import b.bplugins.prefixplugin.utils.MessageUtils;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -23,8 +27,13 @@ public class PrefixMenu {
     }
 
     public void open(Player player) {
-        // Erstellt ein 6-Reihen Inventar
-        Inventory inv = Bukkit.createInventory(null, 54, "§8Prefix Menü");
+        Component titleComponent = MessageUtils.getMessage("menu.title");
+
+        // Fix: eigener Holder statt Bukkit.createInventory(null, ...), damit der
+        // MenuListener das Menü zuverlässig erkennen kann.
+        PrefixMenuHolder holder = new PrefixMenuHolder();
+        Inventory inv = Bukkit.createInventory(holder, 54, titleComponent);
+        holder.setInventory(inv);
 
         File file = new File(plugin.getDataFolder(), "prefixes.yml");
         FileConfiguration config = YamlConfiguration.loadConfiguration(file);
@@ -33,19 +42,17 @@ public class PrefixMenu {
         if (section != null) {
             for (String key : section.getKeys(false)) {
                 String permission = section.getString(key + ".permission");
-
-                // Check, ob der Spieler das Recht für diesen Prefix hat
                 if (permission == null || player.hasPermission(permission)) {
                     inv.addItem(createGuiItem(section, key));
                 }
             }
         }
 
-        // Reset-Button (Barriere) auf Slot 49 (unten mittig)
+        // Reset-Button
         ItemStack reset = new ItemStack(Material.BARRIER);
         ItemMeta meta = reset.getItemMeta();
         if (meta != null) {
-            meta.setDisplayName("§cPrefix zurücksetzen");
+            meta.setDisplayName(MessageUtils.parseLegacyRaw("menu.reset-button"));
             reset.setItemMeta(meta);
         }
         inv.setItem(49, reset);
@@ -54,27 +61,22 @@ public class PrefixMenu {
     }
 
     private ItemStack createGuiItem(ConfigurationSection section, String key) {
-        // Material laden
         String materialName = section.getString(key + ".material", "PAPER");
         Material mat = Material.matchMaterial(materialName);
         ItemStack item = new ItemStack(mat != null ? mat : Material.PAPER);
         ItemMeta meta = item.getItemMeta();
 
         if (meta != null) {
-            // DER ENTSCHEIDENDE FIX:
-            // Wir nutzen parseToLegacy, um MiniMessage-Tags (<gradient> etc.)
-            // für das Inventar-Display in §-Farbcodes umzuwandeln.
             String rawName = section.getString(key + ".display_name", "Unbekannter Prefix");
-            meta.setDisplayName(Main.getMessages().parseToLegacy(rawName));
+            meta.setDisplayName(LegacyComponentSerializer.legacySection()
+                    .serialize(MiniMessage.miniMessage().deserialize(rawName)));
 
-            // Custom Model Data (für eigene Texturen)
             if (section.contains(key + ".custom_model_data")) {
                 meta.setCustomModelData(section.getInt(key + ".custom_model_data"));
             }
 
-            // Lore (Beschreibung)
             List<String> lore = new ArrayList<>();
-            lore.add("§7Klicke, um diese Farbe zu wählen.");
+            lore.add(MessageUtils.parseLegacyRaw("menu.item-lore"));
             meta.setLore(lore);
 
             item.setItemMeta(meta);

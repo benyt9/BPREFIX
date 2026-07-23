@@ -1,0 +1,21 @@
+mappings:
+  prefix: "<colors.message:prefix> "
+
+  colors:
+    message:
+      prefix: "<gray>[<gold>BPrefix</gold><gray>]</gray> "
+      success: "<green>"
+      error: "<red>"
+      info: "<yellow>"
+
+messages:
+  menu:
+    title: "<dark_gray>Prefix Auswahl"
+    reset-button: "<colors.message:error>Prefix zurücksetzen"
+    item-lore: "<colors.message:info>Klicke zum Auswählen"
+
+  no-item-in-hand: "<colors.message:error>Du musst ein Item in der Hand halten!"
+  prefix-created: "<colors.message:success>Prefix %name% wurde erfolgreich erstellt!"
+  prefix-reload-success: "<colors.message:success>Konfiguration erfolgreich neu geladen!"
+  prefix-reset: "<colors.message:success>Dein Prefix wurde zurückgesetzt."
+  prefix-selected: "<colors.message:success>Du hast den Prefix %name% ausgewählt!"

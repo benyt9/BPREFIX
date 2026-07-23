@@ -1,84 +1,89 @@
 package b.bplugins.prefixplugin;
 
+import b.bplugins.prefixplugin.utils.MessageUtils;
+import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.tree.LiteralCommandNode;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
 import org.bukkit.Material;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.logging.Level;
 
-public class PrefixCommand implements CommandExecutor {
+public class PrefixCommand {
 
-    private final Main plugin;
+    public static LiteralCommandNode<CommandSourceStack> createNode(Main plugin) {
+        return Commands.literal("prefix")
+                .executes(ctx -> {
+                    CommandSender sender = ctx.getSource().getSender();
+                    if (sender instanceof Player player) {
+                        new PrefixMenu(plugin).open(player);
+                    } else {
+                        sender.sendMessage("§cNur für Spieler!");
+                    }
+                    return Command.SINGLE_SUCCESS;
+                })
+                .then(Commands.literal("reload")
+                        .requires(source -> source.getSender().hasPermission("bprefix.admin"))
+                        .executes(ctx -> {
+                            CommandSender sender = ctx.getSource().getSender();
+                            String lang = plugin.getConfig().getString("language", "de");
+                            MessageUtils.load(lang);
+                            plugin.reloadConfig();
 
-    public PrefixCommand(Main plugin) {
-        this.plugin = plugin;
+                            if (sender instanceof Player player) {
+                                player.sendMessage(MessageUtils.getMessage("prefix-reload-success"));
+                            } else {
+                                sender.sendMessage("§a[BPREFIX] Konfigurationen wurden erfolgreich neu geladen!");
+                            }
+                            return Command.SINGLE_SUCCESS;
+                        })
+                )
+                .then(Commands.literal("create")
+                        .requires(source -> source.getSender().hasPermission("bprefix.command.createprefix"))
+                        .then(Commands.argument("id", StringArgumentType.word())
+                                .then(Commands.argument("name", StringArgumentType.string())
+                                        .then(Commands.argument("color", StringArgumentType.string())
+                                                .then(Commands.argument("permission", StringArgumentType.word())
+                                                        .executes(ctx -> {
+                                                            CommandSender sender = ctx.getSource().getSender();
+                                                            if (!(sender instanceof Player player)) {
+                                                                sender.sendMessage("§cNur für Spieler!");
+                                                                return Command.SINGLE_SUCCESS;
+                                                            }
+
+                                                            ItemStack itemInHand = player.getInventory().getItemInMainHand();
+                                                            if (itemInHand.getType() == Material.AIR) {
+                                                                player.sendMessage(MessageUtils.getMessage("no-item-in-hand"));
+                                                                return Command.SINGLE_SUCCESS;
+                                                            }
+
+                                                            String id = StringArgumentType.getString(ctx, "id").toLowerCase();
+                                                            String displayName = StringArgumentType.getString(ctx, "name");
+                                                            String colorCode = StringArgumentType.getString(ctx, "color");
+                                                            String permission = StringArgumentType.getString(ctx, "permission");
+
+                                                            saveToPrefixConfig(plugin, id, displayName, colorCode, permission, itemInHand);
+                                                            player.sendMessage(MessageUtils.getMessage("prefix-created", "%name%", displayName));
+                                                            return Command.SINGLE_SUCCESS;
+                                                        })
+                                                )
+                                        )
+                                )
+                        )
+                )
+                .build();
     }
 
-    @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-
-        // 1. RELOAD CHECK (Funktioniert für Spieler & Konsole)
-        if (args.length >= 1 && args[0].equalsIgnoreCase("reload")) {
-            if (!sender.hasPermission("bprefix.admin")) {
-                if (sender instanceof Player p) plugin.send(p, "no-permission");
-                else sender.sendMessage("§cKeine Rechte!");
-                return true;
-            }
-
-            Main.getMessages().reloadMessages();
-
-            if (sender instanceof Player p) {
-                plugin.send(p, "prefix-reload-success");
-            } else {
-                sender.sendMessage("§a[BPREFIX] Konfigurationen erfolgreich neu geladen!");
-            }
-            return true;
-        }
-
-        // Ab hier sind nur noch Befehle für Spieler
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage("§cNur für Spieler!");
-            return true;
-        }
-
-        // 2. CREATE CHECK
-        if (args.length >= 5 && args[0].equalsIgnoreCase("create")) {
-            if (!player.hasPermission("bprefix.command.createprefix")) {
-                plugin.send(player, "no-permission");
-                return true;
-            }
-
-            ItemStack itemInHand = player.getInventory().getItemInMainHand();
-            if (itemInHand.getType() == Material.AIR) {
-                plugin.send(player, "no-item-in-hand");
-                return true;
-            }
-
-            String id = args[1].toLowerCase();
-            String displayName = args[2];
-            String colorCode = args[3];
-            String permission = args[4];
-
-            saveToPrefixConfig(id, displayName, colorCode, permission, itemInHand);
-
-            plugin.send(player, "prefix-created", "%name%", displayName);
-            return true;
-        }
-
-        // 3. MENU ÖFFNEN (Wenn kein Argument oder unbekanntes Argument)
-        new PrefixMenu(plugin).open(player);
-        return true;
-    }
-
-    private void saveToPrefixConfig(String id, String name, String color, String perm, ItemStack item) {
+    private static void saveToPrefixConfig(Main plugin, String id, String name, String color, String perm, ItemStack item) {
         File file = new File(plugin.getDataFolder(), "prefixes.yml");
         FileConfiguration config = YamlConfiguration.loadConfiguration(file);
 
@@ -91,14 +96,14 @@ public class PrefixCommand implements CommandExecutor {
         if (item.hasItemMeta()) {
             ItemMeta meta = item.getItemMeta();
             if (meta != null && meta.hasCustomModelData()) {
-                config.set(path + "custom_model_data", meta.getCustomModelData());
+                config.set(path + "custom_model_data", meta.hasCustomModelData() ? meta.getCustomModelData() : null);
             }
         }
 
         try {
             config.save(file);
         } catch (IOException e) {
-            e.printStackTrace();
+            plugin.getLogger().log(Level.SEVERE, "Konnte prefixes.yml nicht speichern!", e);
         }
     }
 }

@@ -1,5 +1,6 @@
 package b.bplugins.prefixplugin;
 
+import b.bplugins.prefixplugin.utils.MessageUtils;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -9,7 +10,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
 import java.io.File;
 
@@ -22,17 +22,20 @@ public class MenuListener implements Listener {
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
-        if (!event.getView().getTitle().equals("§8Prefix Menü")) return;
+        // Fix: Menü zuverlässig über den Holder erkennen statt über einen Titel-String-Vergleich
+        if (!(event.getInventory().getHolder() instanceof PrefixMenuHolder)) return;
+
         event.setCancelled(true);
 
         if (!(event.getWhoClicked() instanceof Player player)) return;
+
         ItemStack clicked = event.getCurrentItem();
         if (clicked == null || clicked.getType() == Material.AIR) return;
 
         // Reset Button
         if (clicked.getType() == Material.BARRIER) {
             Main.playerColors.put(player.getUniqueId(), "");
-            plugin.send(player, "prefix-reset");
+            player.sendMessage(MessageUtils.getMessage("prefix-reset"));
             player.closeInventory();
             return;
         }
@@ -44,9 +47,10 @@ public class MenuListener implements Listener {
         if (section != null) {
             for (String key : section.getKeys(false)) {
                 String path = "prefixes." + key + ".";
-                Material configMat = Material.matchMaterial(config.getString(path + "material", ""));
 
-                // Wir vergleichen Material und CustomModelData statt dem bunten Namen
+                String matString = config.getString(path + "material", "");
+                Material configMat = Material.matchMaterial(matString);
+
                 if (clicked.getType() == configMat) {
                     int configModelData = config.getInt(path + "custom_model_data", -1);
                     int clickedModelData = -1;
@@ -56,12 +60,17 @@ public class MenuListener implements Listener {
                     }
 
                     if (configModelData == clickedModelData) {
-                        // Im MenuListener (in der Schleife für die Prefixe):
-                        String rawNameFromConfig = section.getString(key + ".display_name");
-                        Main.playerColors.put(player.getUniqueId(), section.getString(key + ".color_code"));
+                        // Fix: Permission auch beim Klick prüfen, nicht nur beim Befüllen des Menüs
+                        String permission = section.getString(key + ".permission");
+                        if (permission != null && !player.hasPermission(permission)) {
+                            continue;
+                        }
 
-                        // WICHTIG: rawNameFromConfig schicken, NICHT die farbige Version!
-                        plugin.send(player, "prefix-selected", "%name%", rawNameFromConfig);
+                        String colorCode = section.getString(key + ".color_code");
+                        Main.playerColors.put(player.getUniqueId(), colorCode);
+
+                        String rawNameFromConfig = section.getString(key + ".display_name");
+                        player.sendMessage(MessageUtils.getMessage("prefix-selected", "%name%", rawNameFromConfig));
 
                         player.closeInventory();
                         return;

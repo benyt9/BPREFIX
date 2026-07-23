@@ -2,6 +2,7 @@ package b.bplugins.prefixplugin;
 
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.OfflinePlayer;
+import org.jetbrains.annotations.NotNull;
 
 public class PrefixPlaceholder extends PlaceholderExpansion {
 
@@ -12,24 +13,33 @@ public class PrefixPlaceholder extends PlaceholderExpansion {
     }
 
     @Override
-    public String getIdentifier() {
+    public @NotNull String getIdentifier() {
         return "bprefix";
     }
 
     @Override
-    public String getAuthor() {
+    public @NotNull String getAuthor() {
         return "bplugins";
     }
 
     @Override
-    public String getVersion() {
+    public @NotNull String getVersion() {
         return "1.0";
     }
 
     @Override
-    public String onRequest(OfflinePlayer player, String params) {
+    public boolean persist() {
+        return true;
+    }
+
+    @Override
+    public boolean canRegister() {
+        return true;
+    }
+
+    @Override
+    public String onRequest(@NotNull OfflinePlayer player, @NotNull String params) {
         if (params.equalsIgnoreCase("prefixcolor")) {
-            // Gibt den Farbcode zurück oder einen leeren String, wenn nichts gesetzt ist
             return Main.playerColors.getOrDefault(player.getUniqueId(), "");
         }
         return null;
